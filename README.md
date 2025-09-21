@@ -25,7 +25,7 @@ A stunning terminal-based system monitor that transforms your media files into b
 1. **Install dependencies**:
 ```bash
 pip install psutil numpy Pillow opencv-python
-
+```
 Basic Usage
 bash
 
