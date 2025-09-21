@@ -26,29 +26,30 @@ A stunning terminal-based system monitor that transforms your media files into b
 ```bash
 pip install psutil numpy Pillow opencv-python
 ```
-Basic Usage
+# Basic Usage
 bash
-
+```
 python Lain.py --folder /path/to/media --style artistic --refresh 0.5
-
-🎯 Usage Examples
+```
+# 🎯 Usage Examples
 
 Display media from current directory:
 bash
-
+```
 python Lain.py
-
-Use a specific ASCII style:
+```
+# Use a specific ASCII style:
 bash
-
+```
 python Lain.py --style blocks
-
-Monitor a custom media folder:
+```
+# Monitor a custom media folder:
 bash
-
+```
 python Lain.py --folder ~/Pictures --refresh 1.0
-
-🎨 ASCII Styles Available
+```
+# 🎨 ASCII Styles Available
+```
 Style	Preview	Description
 artistic	░▒▓█	Most detailed, great for photos
 blocks	█▓▒░	Solid block characters
@@ -66,7 +67,8 @@ Key	Action
 S	Cycle through ASCII styles
 D	Toggle detailed/compact view
 Q	Quit application
-📊 System Metrics Displayed
+```
+# 📊 System Metrics Displayed
 
     CPU Usage: Overall and per-core utilization with history graph
 
@@ -80,7 +82,7 @@ Q	Quit application
 
     System Info: Uptime and process count
 
-🔧 Requirements
+# 🔧 Requirements
 
     Python 3.6+
 
@@ -94,36 +96,36 @@ Q	Quit application
 
     opencv-python >=4.5.0 (for video support)
 
-Installation for Different Systems
+# Installation for Different Systems
 
 Ubuntu/Debian:
 bash
-
+```
 sudo apt-get install python3-dev
 pip install psutil numpy Pillow opencv-python
-
+```
 macOS:
 bash
-
+```
 brew install python
 pip install psutil numpy Pillow opencv-python
-
+```
 Windows (requires Windows Terminal or similar):
 bash
-
+```
 pip install windows-curses psutil numpy Pillow opencv-python
-
-🖼️ Supported Media Formats
+```
+# 🖼️ Supported Media Formats
 
 Images: JPG, JPEG, PNG, BMP, GIF, TIFF
 Videos: MP4, AVI, MOV, MKV, WEBM, FLV
-🐛 Troubleshooting
+# 🐛 Troubleshooting
 
 Terminal too small error: Resize your terminal to at least 30x10 characters
 Missing curses on Windows: Install windows-curses package
 Video not working: Ensure OpenCV is properly installed with pip install opencv-python
 Performance issues: Increase refresh rate with --refresh 1.0
-📝 License
+# 📝 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 🤝 Contributing
