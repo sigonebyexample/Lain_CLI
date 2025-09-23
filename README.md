@@ -27,25 +27,25 @@ A stunning terminal-based system monitor that transforms your media files into b
 pip install psutil numpy Pillow opencv-python
 ```
 # Basic Usage
-bash
-```
+```bash
+
 python Lain.py --folder /path/to/media --style artistic --refresh 0.5
 ```
 # 🎯 Usage Examples
 
 Display media from current directory:
-bash
-```
+```bash
+
 python Lain.py
 ```
 # Use a specific ASCII style:
-bash
-```
+```bash
+
 python Lain.py --style blocks
 ```
 # Monitor a custom media folder:
-bash
-```
+```bash
+
 python Lain.py --folder ~/Pictures --refresh 1.0
 ```
 # 🎨 ASCII Styles Available
@@ -105,14 +105,14 @@ sudo apt-get install python3-dev
 pip install psutil numpy Pillow opencv-python
 ```
 macOS:
-bash
-```
+```bash
+
 brew install python
 pip install psutil numpy Pillow opencv-python
 ```
 Windows (requires Windows Terminal or similar):
-bash
-```
+```bash
+
 pip install windows-curses psutil numpy Pillow opencv-python
 ```
 # 🖼️ Supported Media Formats
@@ -123,15 +123,15 @@ Quick Start
 
     First, install the required packages (if you haven't already):
 
-bash
-```
+```bash
+
 pip install psutil pillow numpy opencv-python
 
     Run the script directly:
 ```
-bash
-```
-python3 system_monitor.py
+```bash
+
+python3 Lain.py
 ```
 If you want to use your own media files:
 
@@ -142,8 +142,8 @@ Option 1: Place media files in the same folder
     The program will automatically detect them
 ```
 Option 2: Create a subfolder for media
-bash
-```
+```bash
+
 # Create a media folder
 mkdir media
 
@@ -152,14 +152,14 @@ mv *.jpg *.png *.mp4 media/
 
 # Run the script pointing to the media folder
 
-python3 system_monitor.py --folder media
+python3 Lain.py --folder media
 ```
 Simple Test
 
 To test if it works immediately:
-bash
-```
-python3 system_monitor.py --style blocks
+```bash
+
+python3 Lain.py --style blocks
 ```
 # vailable ASCII Styles to Try:
 ```
@@ -174,9 +174,9 @@ python3 system_monitor.py --style blocks
     minimal - Minimalist style
 ```
 # Example:
-bash
-```
-python3 system_monitor.py --style blocks --refresh 0.3
+```bash
+
+python3 Lain.py --style blocks --refresh 0.3
 ```
 Controls Once Running:
 ```
@@ -191,13 +191,13 @@ Controls Once Running:
 If you get errors:
 
 Make sure all dependencies are installed:
-bash
-```
+```bash
+
 pip list | grep -E "(psutil|Pillow|numpy|opencv)"
 ```
 If OpenCV fails to install:
-bash
-```
+```bash
+
 # Try this instead of opencv-python
 
 pip install opencv-python-headless
