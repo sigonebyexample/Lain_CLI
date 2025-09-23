@@ -8,7 +8,9 @@ from PIL import Image, ImageEnhance, ImageFilter
 import argparse
 import signal
 import sys
+import queue
 import cv2
+import threading
 
 # Enhanced ASCII character sets for better visual quality
 ASCII_CHARS = {
@@ -27,6 +29,36 @@ ASCII_CHARS = {
                 '*', '#', 'M', 'W', '&', '8', '%', 'B', '@', '$']
 }
 
+def convert_frame_to_ascii(frame, width=80, ascii_chars=None):
+    """
+    Convert a frame to ASCII art using a character set based on brightness
+    """
+    if ascii_chars is None:
+        ascii_chars = " .:-=+*#%@"
+    
+    height = int(frame.shape[0] * width / frame.shape[1] / 2) 
+    if height == 0:
+        height = 1
+        
+    resized_frame = cv2.resize(frame, (width, height))
+
+    if len(resized_frame.shape) > 2:
+        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
+    else:
+        gray_frame = resized_frame
+    
+    normalized = gray_frame / 255.0
+    ascii_frame = []
+    
+    for row in normalized:
+        line = ""
+        for pixel in row:
+            index = int(pixel * (len(ascii_chars) - 1)) 
+            line += ascii_chars[index]
+        ascii_frame.append(line)
+    
+    return ascii_frame
+
 class MediaManager:
     def __init__(self, media_folder=None):
         self.media_folder = media_folder or "."
@@ -36,8 +68,9 @@ class MediaManager:
         self.original_frame = None
         self.media_type = None
         self.video_capture = None
-        self.last_frame_time = 0
-        self.frame_interval = 0.033  # ~30 FPS
+        self.video_thread = None
+        self.running = False
+        self.frame_queue = queue.Queue(maxsize=2)
         
         # Discover media files
         self.discover_media_files()
@@ -102,8 +135,10 @@ class MediaManager:
                     return False, "Could not open video file"
                 
                 self.media_type = 'video'
-                # Read the first frame
-                self.update_video_frame()
+                self.running = True
+                # Start video thread
+                self.video_thread = threading.Thread(target=self.video_loop, daemon=True)
+                self.video_thread.start()
                 return True, f"Video: {os.path.basename(media_path)}"
             except Exception as e:
                 return False, f"Error loading video: {str(e)}"
@@ -118,33 +153,22 @@ class MediaManager:
             except Exception as e:
                 return False, f"Error loading image: {str(e)}"
     
-    def update_video_frame(self):
-        """Update the current frame from video if enough time has passed"""
-        if self.media_type != 'video' or not self.video_capture:
-            return False
-        
-        current_time = time.time()
-        if current_time - self.last_frame_time >= self.frame_interval:
+    def video_loop(self):
+        """Thread function for video playback using the new ASCII conversion"""
+        while self.running and self.video_capture.isOpened():
             ret, frame = self.video_capture.read()
             if not ret:
                 # Loop video
                 self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                ret, frame = self.video_capture.read()
-                if not ret:
-                    return False
+                continue
             
-            # Convert BGR to RGB
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            # Convert to PIL Image
-            pil_image = Image.fromarray(frame_rgb)
+            # Store the original frame for potential use
+            self.original_frame = frame.copy()
             
-            # Update current frame
-            self.current_frame = pil_image
-            self.original_frame = pil_image.copy()
-            self.last_frame_time = current_time
-            return True
-        
-        return False
+            # Control playback speed based on video FPS
+            video_fps = self.video_capture.get(cv2.CAP_PROP_FPS)
+            frame_delay = 1.0 / video_fps if video_fps > 0 else 1.0 / 30
+            time.sleep(frame_delay)
     
     def get_frame(self, original=False):
         """Get current frame - returns original image data if requested"""
@@ -152,11 +176,21 @@ class MediaManager:
             return self.original_frame
         return self.current_frame
     
+    def get_video_frame(self):
+        """Get the current video frame for ASCII conversion"""
+        if self.media_type == 'video' and self.original_frame is not None:
+            return self.original_frame
+        return None
+    
     def stop_video(self):
         """Stop video playback"""
+        self.running = False
+        if self.video_thread and self.video_thread.is_alive():
+            self.video_thread.join(timeout=1.0)
         if self.video_capture:
             self.video_capture.release()
         self.video_capture = None
+        self.video_thread = None
     
     def stop(self):
         """Clean up resources"""
@@ -286,47 +320,65 @@ class EnhancedSystemMonitor:
     
     def generate_ascii_art(self):
         """Generate high-quality ASCII art from current media frame"""
-        frame = self.media_manager.get_frame()
-        if frame is None:
-            self.ascii_art = ["Loading..."]
-            return
+        # Handle video frames differently using the new conversion function
+        if self.media_manager.media_type == 'video':
+            frame = self.media_manager.get_video_frame()
+            if frame is None:
+                self.ascii_art = ["Loading video..."]
+                return
             
-        try:
-            # Enhance the image before converting to ASCII
-            img = frame.copy()
-            
-            # Convert to grayscale
-            if img.mode != 'L':
-                img = img.convert('L')
-            
-            # Enhance contrast
-            enhancer = ImageEnhance.Contrast(img)
-            img = enhancer.enhance(1.5)  # Increase contrast
-            
-            # Apply slight sharpening
-            img = img.filter(ImageFilter.SHARPEN)
-            
-            # Calculate dimensions based on terminal size
-            # Use 80% of terminal width for ASCII art, but at least 20 characters
-            ascii_width = max(20, min(self.width - 10, int(self.width * 0.8)))
-            aspect_ratio = img.height / img.width
-            ascii_height = max(5, min(self.height - 10, int(ascii_width * aspect_ratio * 0.5)))
-            
-            # Resize with high-quality filter
-            img = img.resize((ascii_width, ascii_height), Image.Resampling.LANCZOS)
-            
-            # Get pixels and character set
-            pixels = np.array(img)
-            chars = ASCII_CHARS.get(self.ascii_style, ASCII_CHARS['artistic'])
-            
-            # Generate ASCII art with improved mapping
-            self.ascii_art = []
-            for row in pixels:
-                line = ''.join([self.map_pixel_to_char(pixel, chars) for pixel in row])
-                self.ascii_art.append(line)
+            try:
+                # Use the new ASCII conversion for videos
+                ascii_width = max(20, min(self.width - 10, int(self.width * 0.8)))
+                chars = ''.join(ASCII_CHARS.get(self.ascii_style, ASCII_CHARS['artistic']))
+                self.ascii_art = convert_frame_to_ascii(frame, ascii_width, chars)
+            except Exception as e:
+                self.ascii_art = [f"Video error: {str(e)[:15]}"]
+        
+        # Handle images with the original method
+        elif self.media_manager.media_type == 'image':
+            frame = self.media_manager.get_frame()
+            if frame is None:
+                self.ascii_art = ["Loading..."]
+                return
                 
-        except Exception as e:
-            self.ascii_art = [f"Error: {str(e)[:15]}"]
+            try:
+                # Enhance the image before converting to ASCII
+                img = frame.copy()
+                
+                # Convert to grayscale
+                if img.mode != 'L':
+                    img = img.convert('L')
+                
+                # Enhance contrast
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(1.5)  # Increase contrast
+                
+                # Apply slight sharpening
+                img = img.filter(ImageFilter.SHARPEN)
+                
+                # Calculate dimensions based on terminal size
+                ascii_width = max(20, min(self.width - 10, int(self.width * 0.8)))
+                aspect_ratio = img.height / img.width
+                ascii_height = max(5, min(self.height - 10, int(ascii_width * aspect_ratio * 0.5)))
+                
+                # Resize with high-quality filter
+                img = img.resize((ascii_width, ascii_height), Image.Resampling.LANCZOS)
+                
+                # Get pixels and character set
+                pixels = np.array(img)
+                chars = ASCII_CHARS.get(self.ascii_style, ASCII_CHARS['artistic'])
+                
+                # Generate ASCII art with improved mapping
+                self.ascii_art = []
+                for row in pixels:
+                    line = ''.join([self.map_pixel_to_char(pixel, chars) for pixel in row])
+                    self.ascii_art.append(line)
+                    
+            except Exception as e:
+                self.ascii_art = [f"Error: {str(e)[:15]}"]
+        else:
+            self.ascii_art = ["No media loaded"]
     
     def map_pixel_to_char(self, pixel_value, chars):
         """Map pixel value to ASCII character with improved distribution"""
@@ -640,10 +692,9 @@ class EnhancedSystemMonitor:
             except:
                 pass
             
-            # For videos, update the frame if needed
+            # For videos, we need to update the display regularly
             if self.media_manager.media_type == 'video':
-                if self.media_manager.update_video_frame():
-                    self.prepare_display()
+                self.prepare_display()
             
             try:
                 data = self.get_detailed_performance_data()
