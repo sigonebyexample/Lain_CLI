@@ -119,12 +119,89 @@ pip install windows-curses psutil numpy Pillow opencv-python
 
 Images: JPG, JPEG, PNG, BMP, GIF, TIFF
 Videos: MP4, AVI, MOV, MKV, WEBM, FLV
-# 🐛 Troubleshooting
+Quick Start
 
-Terminal too small error: Resize your terminal to at least 30x10 characters
-Missing curses on Windows: Install windows-curses package
-Video not working: Ensure OpenCV is properly installed with pip install opencv-python
-Performance issues: Increase refresh rate with --refresh 1.0
+    First, install the required packages (if you haven't already):
+
+bash
+
+pip install psutil pillow numpy opencv-python
+
+    Run the script directly:
+
+bash
+
+python3 system_monitor.py
+
+If you want to use your own media files:
+
+Option 1: Place media files in the same folder
+
+    Just put your images (JPG, PNG, etc.) and videos (MP4, AVI, etc.) in the same folder as the Python script
+
+    The program will automatically detect them
+
+Option 2: Create a subfolder for media
+bash
+
+# Create a media folder
+mkdir media
+
+# Move your media files into it
+mv *.jpg *.png *.mp4 media/
+
+# Run the script pointing to the media folder
+python3 system_monitor.py --folder media
+
+Simple Test
+
+To test if it works immediately:
+bash
+
+python3 system_monitor.py --style blocks
+
+Available ASCII Styles to Try:
+
+    standard - Basic characters
+
+    artistic - Detailed artistic characters (default)
+
+    blocks - Block characters for solid look
+
+    smooth - Smooth gradient blocks
+
+    minimal - Minimalist style
+
+Example:
+bash
+
+python3 system_monitor.py --style blocks --refresh 0.3
+
+Controls Once Running:
+
+    Arrow keys (← →) - Switch between media files
+
+    S - Change ASCII style
+
+    D - Toggle detailed view
+
+    Q - Quit
+
+If you get errors:
+
+Make sure all dependencies are installed:
+bash
+
+pip list | grep -E "(psutil|Pillow|numpy|opencv)"
+
+If OpenCV fails to install:
+bash
+
+# Try this instead of opencv-python
+pip install opencv-python-headless
+
+The script should run immediately since everything is in the same folder! Just make sure you have some image or video files in the directory for the best experience.
+
 # 📝 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
